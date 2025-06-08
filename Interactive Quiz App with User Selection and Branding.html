@@ -1,0 +1,335 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ma'lumotlar Tuzilmasi va Algoritmlar Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .quiz-container {
+            max-width: 600px;
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        #question {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #f9f9f9;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            background-color: #e0e0e0;
+        }
+        .option.selected {
+            border: 2px solid #673ab7;
+            background-color: #e6d7ff;
+        }
+        .option.correct {
+            background-color: #4caf50;
+            color: white;
+            border: 2px solid #388e3c;
+        }
+        .option.wrong {
+            background-color: #f44336;
+            color: white;
+            border: 2px solid #d32f2f;
+        }
+        #next-btn, #submit-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #673ab7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #next-btn:hover, #submit-btn:hover {
+            background-color: #5e35b1;
+        }
+        #result {
+            text-align: center;
+            font-size: 1.1em;
+            margin-top: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>Ma'lumotlar Tuzilmasi va Algoritmlar Quiz</h1>
+        <div id="question"></div>
+        <div id="options" class="options"></div>
+        <button id="submit-btn">Javobni tasdiqlash</button>
+        <button id="next-btn" class="hidden">Keyingi savol</button>
+        <div id="result" class="hidden"></div>
+        <div class="footer">Muallif: [U.S.U]</div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                question: "Ma’lumotlar tuzilmasi nima?",
+                options: [
+                    "Grafik interfeys asosida ishlaydi",
+                    "Faqat tashqi qurilmalar uchun",
+                    "Axborotni uzatish uchun aloqa protokoli",
+                    "Ma’lumotlarni samarali saqlash va foydalanish usuli"
+                ],
+                answer: "Ma’lumotlarni samarali saqlash va foydalanish usuli"
+            },
+            {
+                question: "Abstrakt ma’lumotlar tuzilmasi nimani anglatadi?",
+                options: [
+                    "Faqat ko‘rinadigan fayl tizimi",
+                    "Fizik xotiraning to‘liq tavsifi",
+                    "Axborotni chiqaruvchi qurilma",
+                    "Foydalanuvchi ko‘radigan, lekin ichki amalga oshirilishi yashirilgan model"
+                ],
+                answer: "Foydalanuvchi ko‘radigan, lekin ichki amalga oshirilishi yashirilgan model"
+            },
+            {
+                question: "Massiv qanday tuzilma hisoblanadi?",
+                options: [
+                    "Faqat grafik tuzilma",
+                    "Tasodifiy elementlar ketma-ketligi",
+                    "Axborotni bosma holda saqlovchi tuzilma",
+                    "Ketma-ket joylashgan bir xil turdagi elementlar to‘plami"
+                ],
+                answer: "Ketma-ket joylashgan bir xil turdagi elementlar to‘plami"
+            },
+            {
+                question: "Stek qanday ishlaydi?",
+                options: [
+                    "Birinchi kirgan birinchi chiqadi (FIFO)",
+                    "Elementlar faqat o‘rtasidan chiqariladi",
+                    "Faqat tasodifiy kirish orqali ishlaydi",
+                    "Oxirgi kirgan birinchi chiqadi (LIFO)"
+                ],
+                answer: "Oxirgi kirgan birinchi chiqadi (LIFO)"
+            },
+            {
+                question: "Queue (navbat) qanday asosiy prinsipga ega?",
+                options: [
+                    "Oxirgi kirgan birinchi chiqadi (LIFO)",
+                    "Faqat indeks orqali chaqiriladi",
+                    "Faqat juft sonlar uchun ishlaydi",
+                    "Birinchi kirgan birinchi chiqadi (FIFO)"
+                ],
+                answer: "Birinchi kirgan birinchi chiqadi (FIFO)"
+            },
+            {
+                question: "Algoritm tahlilining asosiy maqsadi nima?",
+                options: [
+                    "Kod yozilish stilini aniqlash",
+                    "Rasmiy dizaynni tasdiqlash",
+                    "Foydalanuvchi interfeysini chizish",
+                    "Algoritmning samaradorligini baholash"
+                ],
+                answer: "Algoritmning samaradorligini baholash"
+            },
+            {
+                question: "Asimptotik tahlilda O(n) nimani bildiradi?",
+                options: [
+                    "Vaqt o‘zgarmas bo‘ladi",
+                    "Foydalanilmaydigan algoritm",
+                    "Faqat grafik chizmalar bilan bog‘liq",
+                    "Vazifani bajarish vaqti kirish hajmiga proporsional"
+                ],
+                answer: "Vazifani bajarish vaqti kirish hajmiga proporsional"
+            },
+            {
+                question: "Abstrakt tiplar misoliga qaysi biri kiradi?",
+                options: [
+                    "Tasma printer",
+                    "Sensorli ekran",
+                    "Uzatish kabeli",
+                    "Stack (stek)"
+                ],
+                answer: "Stack (stek)"
+            },
+            {
+                question: "Ma’lumotlar tuzilmalarining ikkiga bo‘linishi nimani bildiradi?",
+                options: [
+                    "Sonli va matnli fayllar",
+                    "Axborot va inspeksiyasi",
+                    "Kompyuter va telefon uchun",
+                    "Statik va dinamik tuzilmalar"
+                ],
+                answer: "Statik va dinamik tuzilmalar"
+            },
+            {
+                question: "Rekursiv algoritm nima?",
+                options: [
+                    "Faqat bitta amalni bajargan algoritm",
+                    "Kodda sikl mavjud bo‘lmagan algoritm",
+                    "Tashqi qurilmasiz ishlaydigan algoritm",
+                    "O‘zini o‘zi chaqiruvchi algoritm"
+                ],
+                answer: "O‘zini o‘zi chaqiruvchi algoritm"
+            },
+            {
+                question: "Ma’lumotlarning boshlang‘ich turi qanday bo‘ladi?",
+                options: [
+                    "Chuqur o‘zaro bog‘langan modullar",
+                    "Murakkab grafik komponentlar",
+                    "Tarmoqli qurilma signallari",
+                    "Oddiy (primitive) turlar"
+                ],
+                answer: "Oddiy (primitive) turlar"
+            }
+        ];
+
+        const questionElement = document.getElementById("question");
+        const optionsElement = document.getElementById("options");
+        const submitButton = document.getElementById("submit-btn");
+        const nextButton = document.getElementById("next-btn");
+        const resultElement = document.getElementById("result");
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedAnswer = null;
+
+        function showQuestion() {
+            const question = quizData[currentQuestion];
+            questionElement.innerText = question.question;
+            optionsElement.innerHTML = "";
+            question.options.forEach(option => {
+                const div = document.createElement("div");
+                div.className = "option";
+                div.innerText = option;
+                div.addEventListener("click", () => selectAnswer(div, option));
+                optionsElement.appendChild(div);
+            });
+            submitButton.classList.remove("hidden");
+            nextButton.classList.add("hidden");
+            selectedAnswer = null;
+        }
+
+        function selectAnswer(element, option) {
+            selectedAnswer = option;
+            const options = document.querySelectorAll(".option");
+            options.forEach(opt => opt.classList.remove("selected"));
+            element.classList.add("selected");
+        }
+
+        function checkAnswer() {
+            if (!selectedAnswer) {
+                alert("Iltimos, javobni tanlang!");
+                return;
+            }
+            const question = quizData[currentQuestion];
+            const options = document.querySelectorAll(".option");
+            options.forEach(opt => {
+                if (opt.innerText === question.answer) {
+                    opt.classList.add("correct");
+                } else if (opt.innerText === selectedAnswer) {
+                    opt.classList.add("wrong");
+                }
+            });
+            if (selectedAnswer === question.answer) {
+                score++;
+            }
+            submitButton.classList.add("hidden");
+            nextButton.classList.remove("hidden");
+        }
+
+        function showResult() {
+            questionElement.innerHTML = "";
+            optionsElement.innerHTML = "";
+            submitButton.classList.add("hidden");
+            nextButton.classList.add("hidden");
+            resultElement.classList.remove("hidden");
+            resultElement.innerHTML = `
+                <h2>Quiz yakunlandi!</h2>
+                <p>Sizning natijangiz: ${score}/${quizData.length}</p>
+                <p>To'g'ri javoblar foizi: ${((score / quizData.length) * 100).toFixed(2)}%</p>
+            `;
+        }
+
+        submitButton.addEventListener("click", checkAnswer);
+        nextButton.addEventListener("click", () => {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        showQuestion();
+    </script>
+</body>
+</html>
